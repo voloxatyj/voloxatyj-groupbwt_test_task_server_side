@@ -1,0 +1,60 @@
+version: '3.7'
+
+services:
+  nestjs:
+    container_name: nestjs
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+      - 9229:9229
+    command: yarn start:dev
+    env_file:
+      - .env
+    networks:
+      - groupbwt_network
+    depends_on:
+      - redis
+      - mongo
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - '6379:6379'
+    networks:
+      - groupbwt_network
+
+  rcli:
+    image: redis:latest
+    container_name: rcli
+    restart: always
+    links:
+      - redis
+    command: redis-cli -h redis
+    networks:
+      - groupbwt_network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_INITDB_DATABASE: groupbwt
+    ports: 
+      - '27017:27017'
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - groupbwt_network
+
+networks:
+  groupbwt_network:
+    name: localhost
